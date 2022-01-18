@@ -1,0 +1,19 @@
+name: UNet_lib
+
+channels:
+    - conda-forge
+    - esri
+
+dependencies:
+    - python>=3.8
+    - pip
+    - numpy
+    - scipy
+    - scikit-image
+    - matplotlib-base
+    - joblib
+    - tensorflow-gpu
+    - pip:
+        - spyder
+    
+    
