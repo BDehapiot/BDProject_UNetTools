@@ -22,6 +22,8 @@ from core.functions import data_augmentation
 
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
+stop
+
 #%% Initialize
 
 ''' 1) Get paths '''
@@ -38,11 +40,17 @@ print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 # MASK_NAME = 'Cells_expl_01_sStack-10_sStack-10_mask.tif'
 # TEST_NAME = 'Cells_expl_01_sStack-10_test.tif'
 
-DATA_PATH = 'data_MitoEM/'
+# DATA_PATH = 'data_MitoEM/'
+# TEMP_PATH = DATA_PATH + 'temp/'
+# RAW_NAME = 'MitoEM_EPFL_raw_01.tif'
+# MASK_NAME = 'MitoEM_EPFL_mask_01.tif'
+# TEST_NAME = 'MitoEM_EPFL_raw_02.tif'
+
+DATA_PATH = 'data_RBCs/'
 TEMP_PATH = DATA_PATH + 'temp/'
-RAW_NAME = 'MitoEM_EPFL_raw_01.tif'
-MASK_NAME = 'MitoEM_EPFL_mask_01.tif'
-TEST_NAME = 'MitoEM_EPFL_raw_02.tif'
+RAW_NAME = '210218_1600_RSize_REG(1-2000).tif'
+MASK_NAME = '210218_1600_RSize_rawREGMask(1-2000).tif'
+TEST_NAME = '210218_1600_RSize_REG(2001-3000).tif'
 
 ''' 2) Open data '''
 

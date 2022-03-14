@@ -12,13 +12,17 @@ import segmentation_models as sm
 sm.set_framework('tf.keras')
 sm.framework()
 
-from skimage import io
 
+from skimage import io
 
 #%%
 
 from tools.dtype import as_uint8
 from core.functions import data_augmentation
+
+#%% Parameters
+
+AUG = False
 
 #%% Check GPUs
 
@@ -40,11 +44,18 @@ print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 # MASK_NAME = 'Cells_expl_01_sStack-10_sStack-10_mask.tif'
 # TEST_NAME = 'Cells_expl_01_sStack-10_test.tif'
 
-DATA_PATH = 'data_MitoEM/'
+# DATA_PATH = 'data_MitoEM/'
+# TEMP_PATH = DATA_PATH + 'temp/'
+# RAW_NAME = 'MitoEM_EPFL_raw_01.tif'
+# MASK_NAME = 'MitoEM_EPFL_mask_01.tif'
+# TEST_NAME = 'MitoEM_EPFL_raw_02.tif'
+
+DATA_PATH = 'data_RBCs/'
 TEMP_PATH = DATA_PATH + 'temp/'
-RAW_NAME = 'MitoEM_EPFL_raw_01.tif'
-MASK_NAME = 'MitoEM_EPFL_mask_01.tif'
-TEST_NAME = 'MitoEM_EPFL_raw_02.tif'
+RAW_NAME = '210218_1600_RSize_REG(1-2000).tif'
+MASK_NAME = '210218_1600_RSize_rawREGMask(1-2000).tif'
+TEST_NAME = '210218_1600_RSize_REG(2001-3000).tif'
+TEST_NAME = '210218_1600_Expl-02_RSize_REG.tif'
 
 ''' 2) Open data '''
 
@@ -67,30 +78,34 @@ test = test[:,0:min_size,0:min_size]
 
 #%% Data augmentation (albumentation)
 
-# # Define operations 
-# operations = A.Compose([
-#     A.VerticalFlip(p=0.5),              
-#     # A.RandomRotate90(p=0.5),
-#     A.HorizontalFlip(p=0.5),
-#     # A.Transpose(p=0.5),
-#     A.GridDistortion(p=0.5)
-#     ]
-# )
-
-# start = time.time()
-# print('Data augmentation')
-
-# raw_augmented, mask_augmented = data_augmentation(
-#     raw, mask, operations, iterations=50, parallel=False)
+if AUG:
     
-# end = time.time()
-# print(f'  {(end - start):5.3f} s')  
+    # Define operations 
+    operations = A.Compose([
+        A.VerticalFlip(p=0.5),              
+        # A.RandomRotate90(p=0.5),
+        A.HorizontalFlip(p=0.5),
+        # A.Transpose(p=0.5),
+        A.GridDistortion(p=0.5)
+        ]
+    )
+    
+    start = time.time()
+    print('Data augmentation')
+    
+    raw_augmented, mask_augmented = data_augmentation(
+        raw, mask, operations, iterations=50, parallel=False)
+        
+    end = time.time()
+    print(f'  {(end - start):5.3f} s')  
+    
+    io.imsave(TEMP_PATH+'raw_augmented.tif', raw_augmented.astype("uint8"), check_contrast=False)  
+    io.imsave(TEMP_PATH+'mask_augmented.tif', mask_augmented.astype("uint8"), check_contrast=False)   
+    
+else:
 
-# io.imsave(TEMP_PATH+'raw_augmented.tif', raw_augmented.astype("uint8"), check_contrast=False)  
-# io.imsave(TEMP_PATH+'mask_augmented.tif', mask_augmented.astype("uint8"), check_contrast=False)   
-
-raw_augmented = raw
-mask_augmented = mask
+    raw_augmented = raw
+    mask_augmented = mask
 
 #%%
 
@@ -124,8 +139,8 @@ history = model.fit(
     raw_augmented, 
     mask_augmented, 
     validation_split=0.2,
-    batch_size=8, 
-    epochs=100, 
+    batch_size=16, 
+    epochs=30, 
     callbacks=callbacks, 
     verbose=1)
 
