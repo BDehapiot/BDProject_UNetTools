@@ -21,11 +21,19 @@ from skimage import io
 from tools.dtype import as_uint8
 from core.functions import data_augmentation
 
-#%% Augmentation parameters
+#%% Check GPUs
 
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+
+#%% Parameters
+
+''' 1) Get paths '''
+DATA_PATH = 'data_RBCs/'
+TEMP_PATH = DATA_PATH + 'temp/'
+
+''' 2) Augmentation '''
 AUG = False
 ITER = 1000
-
 # Define operations 
 operations = A.Compose([
     A.VerticalFlip(p=0.5),              
@@ -36,44 +44,30 @@ operations = A.Compose([
     ]
 )
 
-#%% Check GPUs
-
-print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
-
 #%% Initialize
 
-''' 1) Get paths '''
-
-DATA_PATH = 'data_RBCs/'
-TEMP_PATH = DATA_PATH + 'temp/'
-RAW_NAME = '210218_1600_RSize_REG(1-2000).tif'
-MASK_NAME = '210218_1600_RSize_rawREGMask(1-2000).tif'
-TEST_NAME = '210218_1600_RSize_REG(2001-3000).tif'
-TEST_NAME = '210218_1600_Expl-02_RSize_REG.tif'
-
-''' 2) Open data '''
-
-raw = io.imread(DATA_PATH + RAW_NAME)
-test = io.imread(DATA_PATH + TEST_NAME) 
-mask = io.imread(DATA_PATH + MASK_NAME)
-
-''' 3) Format data '''
-
-# Convert to uint8
-raw = as_uint8(raw, 0.999)
-test = as_uint8(test, 0.999)
-mask = as_uint8(mask, 0.999)
-
-# Check for xy size
-min_size = min([raw.shape[1], raw.shape[2]])
-raw = raw[:,0:min_size,0:min_size]
-mask = mask[:,0:min_size,0:min_size]
-test = test[:,0:min_size,0:min_size]
-
-# Normalize data
-raw = normalize(raw)
-test = normalize(test)
-mask = mask/255
+''' 3) Open & format data '''
+dirlist = os.listdir(DATA_PATH)
+for name in dirlist:
+    if 'mask' in name:
+        
+        # Open data
+        temp_mask = io.imread(DATA_PATH + name)
+        temp_raw = io.imread(DATA_PATH + name[0:-8]+'raw.tif')           
+        
+        # Format data
+        temp_raw = normalize(temp_raw)
+        temp_mask = temp_mask/255
+                
+        if 'mask' not in locals():
+            mask = temp_mask
+            raw = temp_raw          
+        else:
+            mask = np.append(mask, temp_mask, axis=0)
+            raw = np.append(raw, temp_raw, axis=0)  
+                       
+# io.imsave(TEMP_PATH+'mask.tif', mask.astype("uint8"), check_contrast=False)          
+# io.imsave(TEMP_PATH+'raw.tif', (raw*255).astype("uint8"), check_contrast=False)  
 
 #%% Data augmentation
 
@@ -86,7 +80,6 @@ if AUG:
         parallel=False
         )
         
-    
 #%% Train model
 
 BACKBONE = 'resnet34'
@@ -128,3 +121,12 @@ plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
 plt.show()
+
+#%% Predict
+
+test = io.imread(DATA_PATH + 'Expl_04_noREG_raw.tif')
+test = normalize(test)
+pred = model.predict(test)
+
+# Save
+io.imsave(TEMP_PATH+'pred.tif', pred.astype("float32"), check_contrast=False)  
